@@ -1,0 +1,17 @@
+{
+  "lane": "#5 partial collision (paper / no-go only)",
+  "date": "2026-06-03",
+  "parameters": {"rf": 8, "rp": 20, "t_perm": 16, "ell": 8, "mode": "compression", "collide_first_q": "3..7"},
+  "verifier_golden": {
+    "verify_collision_t3": true,
+    "verify_collision_t4": false,
+    "verify_x_eq_y_rejected": true,
+    "status": "14/14 golden checks pass (includes published Beltran/Merz/Rodriguez/Scarlata t=3 collision)"
+  },
+  "nogo_cost": {
+    "q4_birthday": "p^2 = 2^62 hash evaluations",
+    "note": "Full-strength RF=8/RP=20. The funded target collides q>=4 output words; a generic birthday on q=4 words over F_p is ~p^2 = 2^62, and no structural shortcut on the full-strength permutation is known. Reduced-round algebraic levers (CICO/zero-test degree laws) do not transfer to the full RF=8/RP=20 compression target."
+  },
+  "verdict": "NO-GO (analysis only). Full-strength parameters confirmed by the verifier; documented as the §7 no-go cost table.",
+  "reproduce": "cargo run --release --bin golden   # collision + cico rows"
+}

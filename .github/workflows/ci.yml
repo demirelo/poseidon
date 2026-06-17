@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    name: Python (smoke + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Smoke test (verifier rejects bad candidates)
+        run: make smoke
+
+      - name: Unit tests
+        # These are stand-alone scripts (each adds the repo root to sys.path and
+        # exits non-zero on failure), not unittest/pytest suites, so run them
+        # directly. CI never runs the vendored reference verifier.
+        run: |
+          for t in tests/test_*.py; do
+            echo "::group::$t"
+            python "$t"
+            echo "::endgroup::"
+          done
+
+  rust:
+    name: Rust (core_rs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        working-directory: core_rs
+        run: cargo build --release
+
+      - name: Test
+        working-directory: core_rs
+        run: cargo test
+
+      - name: Rust goldens + spike smoke
+        working-directory: core_rs
+        # Cheap goldens + a fast slice of the cryptanalysis spike. Keep this
+        # cheap: validate-lite runs only the shard-independent gates (G0..G4),
+        # the baseline spike uses a tiny node count, and validate-shard checks
+        # the committed 64-row RF=4/RP=5 var0 fixture (no 8192-row checks here).
+        run: |
+          cargo run --release --bin golden
+          cargo run --release --bin zerotest_golden
+          cargo run --release --bin zt_resultant_fast -- validate-lite
+          cargo run --release --bin custom_mds_scout -- --family cauchy-default --count 1 --rf 2 --rp 1
+          cargo run --release --bin zt_amortized_spike -- baseline-rootvar 4 5 8 0
+          cargo run --release --bin zt_resultant_fast -- validate-shard --path tests/fixtures/rf4_rp5_var0_first_64.csv --rows 64
+
+  paper:
+    name: Paper (build PDF)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build PDF (self-contained, inline bibliography)
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: paper
+          root_file: poseidon2026-kb.tex
+
+      - name: Upload PDF and build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: poseidon2026-kb
+          path: |
+            paper/poseidon2026-kb.pdf
+            paper/poseidon2026-kb.log
+          if-no-files-found: warn

@@ -1,0 +1,56 @@
+[package]
+name = "poseidon_core"
+version = "0.1.0"
+edition = "2021"
+description = "Verifier-exact KoalaBear/Poseidon1 native core for the 2026 Poseidon Cryptanalysis Initiative"
+
+# No external dependencies: fully offline, std-only. Montgomery field + Poseidon1.
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "golden"
+path = "src/bin/golden.rs"
+
+[[bin]]
+name = "bench"
+path = "src/bin/bench.rs"
+
+[[bin]]
+name = "poly_golden"
+path = "src/bin/poly_golden.rs"
+
+[[bin]]
+name = "cico_golden"
+path = "src/bin/cico_golden.rs"
+
+[[bin]]
+name = "zerotest_golden"
+path = "src/bin/zerotest_golden.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[[bin]]
+name = "calibrate"
+path = "src/bin/calibrate.rs"
+
+[[bin]]
+name = "zerotest_calibrate"
+path = "src/bin/zerotest_calibrate.rs"
+
+[[bin]]
+name = "zerotest_solve"
+path = "src/bin/zerotest_solve.rs"
+
+[[bin]]
+name = "zerotest_cofactor_scout"
+path = "src/bin/zerotest_cofactor_scout.rs"
+
+[[bin]]
+name = "hgcd_bench"
+path = "src/bin/hgcd_bench.rs"

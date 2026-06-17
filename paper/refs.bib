@@ -1,0 +1,105 @@
+% =============================================================================
+% Verified bibliography for poseidon2026-kb.tex
+% Core entries checked against IACR ePrint (https://eprint.iacr.org) on 2026-06-03.
+% Refreshed on 2026-06-17 against the Poseidon Initiative page. Direct live
+% ePrint access was blocked by Cloudflare during the refresh; nttlower was later
+% corrected from the supplied BibTeX check.
+% Verification: exact citation_title / citation_author / citation_publication_date
+% metadata extracted from each ePrint record page; abstracts cross-checked for
+% topical match. See accompanying audit report for per-entry status.
+%
+% NOTE ON KEYS: keys are chosen to match the existing \cite{...} commands in
+% poseidon2026-kb.tex (\cite{poseidon}, \cite{hades}, \cite{graeffe},
+% \cite{cico2026}, \cite{initiative}) so this file is drop-in if the manuscript
+% is switched from the inline thebibliography to \bibliography{refs}. Stable
+% aliases (poseidon2019, hades2020, etc.) are NOT used to avoid breaking the
+% current \cite keys; rename here AND in the .tex together if desired.
+%
+% CORRECTIONS APPLIED vs. the manuscript's inline thebibliography:
+%   * hades   : the manuscript cited ePrint 2020/179, which is a DIFFERENT paper
+%               (Keller & Rosemarin, "Mind the Middle Layer"). The title/authors
+%               in the manuscript describe the HADES *design* paper, whose real
+%               identifier is ePrint 2019/1107. Corrected to 2019/1107.
+%   * cico2026: the manuscript title was paraphrased and the author list was
+%               truncated to "Bak, Bariant, et al. (INRIA/DGA)". Corrected to the
+%               exact registered title and the full 5-author list. The
+%               "INRIA/DGA" affiliation is NOT part of the ePrint record and has
+%               been dropped. ePrint number 2026/150 is CORRECT.
+% =============================================================================
+
+@misc{poseidon,
+  author       = {Lorenzo Grassi and Dmitry Khovratovich and Christian Rechberger and Arnab Roy and Markus Schofnegger},
+  title        = {Poseidon: A New Hash Function for Zero-Knowledge Proof Systems},
+  howpublished = {Cryptology {ePrint} Archive, Paper 2019/458},
+  year         = {2019},
+  note         = {\url{https://eprint.iacr.org/2019/458}. Also USENIX Security 2021.},
+  url          = {https://eprint.iacr.org/2019/458}
+}
+
+% CORRECTED: was cited as ePrint 2020/179 in the manuscript. 2020/179 is a
+% different paper (Keller & Rosemarin, "Mind the Middle Layer: The HADES Design
+% Strategy Revisited"). The title and author list given in the manuscript belong
+% to the HADES *design* paper below, whose correct identifier is 2019/1107.
+@misc{hades,
+  author       = {Lorenzo Grassi and Reinhard L\"uftenegger and Christian Rechberger and Dragos Rotaru and Markus Schofnegger},
+  title        = {On a Generalization of Substitution-Permutation Networks: The {HADES} Design Strategy},
+  howpublished = {Cryptology {ePrint} Archive, Paper 2019/1107},
+  year         = {2019},
+  note         = {\url{https://eprint.iacr.org/2019/1107}. Also EUROCRYPT 2020, LNCS 12106, doi:10.1007/978-3-030-45724-2\_23.},
+  url          = {https://eprint.iacr.org/2019/1107}
+}
+
+@misc{graeffe,
+  author       = {Ziyu Zhao and Jintai Ding},
+  title        = {Breaking Poseidon Challenges with Graeffe Transforms and Complexity Analysis by {FFT} Lower Bounds},
+  howpublished = {Cryptology {ePrint} Archive, Paper 2025/950},
+  year         = {2025},
+  note         = {\url{https://eprint.iacr.org/2025/950}},
+  url          = {https://eprint.iacr.org/2025/950}
+}
+
+% Verified against public metadata (dblp and ePrint-classic mirror, 2026-06-05).
+% Keep this entry aligned with the manuscript's inline bibliography.
+@misc{cico2026,
+  author       = {Antoine Bak and Augustin Bariant and Aur\'elien Boeuf and Ma\"el Hostettler and Guilhem Jazeron},
+  title        = {Claiming bounties on small scale {Poseidon} and {Poseidon2} instances using resultant-based algebraic attacks},
+  howpublished = {Cryptology {ePrint} Archive, Paper 2026/150},
+  year         = {2026},
+  note         = {\url{https://eprint.iacr.org/2026/150}},
+  url          = {https://eprint.iacr.org/2026/150}
+}
+
+@misc{survey2024,
+  author       = {Lorenzo Grassi and Christian Rechberger and Markus Schofnegger and Dmitry Khovratovich},
+  title        = {Survey of attacks on {Poseidon} and {Poseidon2}},
+  howpublished = {Survey linked from the {Poseidon} Cryptanalysis Initiative},
+  year         = {2024},
+  note         = {Version dated 22 November 2024},
+  url          = {https://www.poseidon-initiative.info/}
+}
+
+@misc{initiative,
+  author       = {{Ethereum Foundation}},
+  title        = {Poseidon Cryptanalysis Initiative},
+  howpublished = {\url{https://www.poseidon-initiative.info/}},
+  year         = {2024},
+  note         = {Accessed 2026-06-17}
+}
+
+@misc{gbsubspace,
+  author       = {Lorenzo Grassi and Katharina Koschatko and Christian Rechberger},
+  title        = {{Poseidon} and {Neptune}: {Gr\"obner} Basis Cryptanalysis Exploiting Subspace Trails},
+  howpublished = {Cryptology {ePrint} Archive, Paper 2025/954},
+  year         = {2025},
+  note         = {\url{https://eprint.iacr.org/2025/954}. Also TOSC 2025.},
+  url          = {https://eprint.iacr.org/2025/954}
+}
+
+@misc{nttlower,
+  author       = {Ziyu Zhao and Antonio Sanso and Giuseppe Vitto and Jintai Ding},
+  title        = {Graeffe-Based Attacks on {Poseidon} and {NTT} Lower Bounds},
+  howpublished = {Cryptology {ePrint} Archive, Paper 2025/1916},
+  year         = {2025},
+  note         = {Corrected from supplied BibTeX check; direct ePrint access was unavailable from the build environment on 2026-06-17.},
+  url          = {https://eprint.iacr.org/2025/1916}
+}

@@ -1,0 +1,61 @@
+{
+  "artifact": "custom_mds_scout_round1",
+  "date": "2026-06-17",
+  "scope": "reduced-round custom-MDS admissibility/support smoke; not a full-round solve and not an eliminant-degree measurement",
+  "live_context": {
+    "initiative_page_checked": "2026-06-17",
+    "zero_test_current_public_record": "RF=6/RP=8",
+    "first_public_record_improving_zero_test_target": "RF=6/RP=9",
+    "mds_rule": "arbitrary MDS matrices are admissible if they satisfy the no-invariant-subspace-trail requirements"
+  },
+  "command_shape": "cargo run --release --bin custom_mds_scout -- --family <family> --count 1 --rf 2 --rp 4",
+  "admissibility_gate": "reference/poseidon-tools poseidon.mds_matrix.verify_mds_matrix",
+  "rf": 2,
+  "rp": 4,
+  "default_law_eliminant_degree": 6561,
+  "candidates": [
+    {
+      "candidate_id": "cauchy-variant-0",
+      "family": "cauchy-variant",
+      "seed": 0,
+      "matrix_hash": "d6f2b93b565cfdaca2f1555d811c45aaa3f2c2fe1cbde057ecadc49744222b6b",
+      "fixture": "tests/fixtures/mds/cauchy_variant_seed0.json",
+      "admissible": true,
+      "nonzero_entries": 256,
+      "density": 1.0,
+      "support_from_lane0_after_mds": [16, 16, 16, 16, 16, 16],
+      "numeric_eval_us_per_hash": 0.836,
+      "eliminant_degree_measured": null,
+      "verdict": "admissible_dense_baseline_no_degree_claim"
+    },
+    {
+      "candidate_id": "circulant-0",
+      "family": "circulant",
+      "seed": 0,
+      "matrix_hash": "271972417ee6621417f0f14d3ddfd588dd626616b4a919d4930bef03b884577b",
+      "fixture": "tests/fixtures/mds/plonky3_circulant.json",
+      "admissible": true,
+      "nonzero_entries": 256,
+      "density": 1.0,
+      "support_from_lane0_after_mds": [16, 16, 16, 16, 16, 16],
+      "numeric_eval_us_per_hash": 0.810,
+      "eliminant_degree_measured": null,
+      "verdict": "admissible_dense_baseline_no_degree_claim"
+    },
+    {
+      "candidate_id": "sparse-plus-dense-0",
+      "family": "sparse-plus-dense",
+      "seed": 0,
+      "matrix_hash": "0ee52b6c9c465c7f7d34171ae585c6991f1954d6d7ad4b15f89aa61c8905462f",
+      "fixture": null,
+      "admissible": true,
+      "nonzero_entries": 256,
+      "density": 1.0,
+      "support_from_lane0_after_mds": [16, 16, 16, 16, 16, 16],
+      "numeric_eval_us_per_hash": 0.819,
+      "eliminant_degree_measured": null,
+      "verdict": "admissible_dense_baseline_no_degree_claim"
+    }
+  ],
+  "round1_verdict": "The harness and admissibility bridge work. The first sampled candidates are all dense after one MDS layer, so this smoke gives no support/build-collapse signal. A real 48-hour scout should broaden each family and measure symbolic build density, factor rates, and root density before escalating."
+}

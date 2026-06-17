@@ -1,0 +1,21 @@
+{
+  "lane": "#3 density scout (capped)",
+  "date": "2026-06-03",
+  "verdict": "NULL confirmed — no exploitable first-order multiplicative-character bias",
+  "decode_random_nonzero": {
+    "n": 200000,
+    "per_index_freq_min": 0.0612,
+    "per_index_freq_max": 0.0636,
+    "uniform_expected": 0.0625,
+    "index0_freq": 0.0635
+  },
+  "decode_rp6_hash_outputs": {
+    "n": 64000,
+    "chi_square": 14.0,
+    "dof": 15,
+    "critical_5pct": 25.0,
+    "result": "UNIFORM"
+  },
+  "conclusion": "Decode is ~uniform over {0..15}; index 0 is NOT special (the spec's mu(0)=1/p is inconsistent with the shipped verifier). The 'never zero position 0' heuristic is wrong for this instance. Density success-rate baseline is 2^-48 (paper §6). No attack lever found at the tested rounds.",
+  "reproduce": "python3 tests/profile_density_decode.py"
+}

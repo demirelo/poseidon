@@ -1,0 +1,80 @@
+{
+  "lane": "#2 zero-test production lane — RF=4/RP=5 coordinate eliminant",
+  "challenge": "zerotest",
+  "method": "fixed-root coordinate variable-cofactor",
+  "date": "2026-06-04",
+  "result": "WITNESS_FOUND",
+  "params": {"rf": 4, "rp": 5, "t": 16, "alpha": 3, "field": "KoalaBear p=2130706433", "fp2": "Fp[x]/(x^2-3)"},
+  "seed_idx": 0,
+  "var_idx": 0,
+  "expected_degree": 1594323,
+  "samples": {
+    "shards": 16,
+    "nodes_per_shard": 100000,
+    "last_shard_nodes": 94324,
+    "expected_samples": 1594324,
+    "loaded_rows": 1594324,
+    "distinct_samples": 1594324,
+    "covered": 1594324,
+    "missing": 0,
+    "duplicates": 0,
+    "conflicting_xs": 0,
+    "out_of_grid": 0,
+    "zero_resultants": 0,
+    "complete": true,
+    "workers": 14,
+    "per_node_ms_wall_range": "23.1-31.0 (14-worker)",
+    "note": "completed via checkpoint/skip-existing resume after a ~2.3h mid-run stall; coverage re-audited clean post-hoc"
+  },
+  "solve": {
+    "stable": true,
+    "eliminant_degree": 1594323,
+    "eliminant_degree_law": "3^(2*RF+RP) = 3^13 = 1594323",
+    "x_roots": 1,
+    "y_candidates": 1,
+    "polynomial_degree": 7,
+    "interpolation_seconds": 2125.74,
+    "roots_seconds": 1035.56,
+    "solve_total_seconds": 3162.40
+  },
+  "witness": {
+    "seed": 2776825856,
+    "root": {"c0": 1022890484, "c1": 1615961718},
+    "g0": {"c0": 680679775, "c1": 1560756119},
+    "p_hat": [1503052972, 391624812, 1384180815, 1741132771, 394185169, 1322385129, 1123569327, 1865776146, 1839320721, 2028193664, 893559891, 1617292597, 576183139, 160133969, 26563266, 1909068522],
+    "residual": {"c0": 0, "c1": 0}
+  },
+  "verification": {
+    "independent_python": true,
+    "a0_equals_root_recheck": true,
+    "residual_recomputed": [0, 0],
+    "negative_controls": {"rf4_rp6": false, "rf6_rp5": false, "rf4_rp4": false},
+    "note": "poseidon_attack.verifiers.verify_zerotest (Python) is a separate implementation from the Rust solver; independent recomputation confirms a0==root and residual==(0,0); negative controls confirm the witness is parameter-specific (not a trivial all-pass)."
+  },
+  "official_bridge": "This reduced-round candidate can be checked through submission/verify_with_official.py with rf=4,rp=5 via the independent verifier. The bridge also threads r_f/r_p to the pinned official verifier when --official is used, but this RF=4/RP=5 point is reduced-round paper evidence, not a full-round submission.",
+  "shards": {
+    "count": 16,
+    "csv_bytes_excluded": true,
+    "data_location": "raw CSV shard files are excluded from the public repo; the durable artifact records shard byte counts and SHA-256 hashes below",
+    "sha256_manifest": [
+      {"file": "shard_00000001.csv", "bytes": 1637068, "sha256": "1e09cf5399275737d862295cf3c02c94ce774695825cddc1c1ed9884e92bf15b"},
+      {"file": "shard_00100001.csv", "bytes": 1748220, "sha256": "b2d992cc2443b7f17ac36c7d62cde8a771fd45fdaa1edd546a8558e00df88875"},
+      {"file": "shard_00200001.csv", "bytes": 1747733, "sha256": "6998c2ff92e430ee11698315b18d20a83a9e8cde88069799e506bf29afdfada7"},
+      {"file": "shard_00300001.csv", "bytes": 1748046, "sha256": "ec57e86fef8ea1aafc73aeed20d519bd670d023103d4207154146be1c58c2119"},
+      {"file": "shard_00400001.csv", "bytes": 1748024, "sha256": "da94c85cd304c55268ee49fe81e4ee295f04ab78df45fad7aacd90e8facc56ca"},
+      {"file": "shard_00500001.csv", "bytes": 1747999, "sha256": "381ca61cfca221640b9e7e248740977f8a348a0a377e792488bdec729c6ac7f7"},
+      {"file": "shard_00600001.csv", "bytes": 1747924, "sha256": "8f2f653c242cdc8ff6a099aa1b16d822c72185eb2aff111b6e7ef38b0fb665b3"},
+      {"file": "shard_00700001.csv", "bytes": 1747890, "sha256": "f224dec0f94a5bd1d549fd945ebe66bff880596b63a186658a8fec4d097d3e7d"},
+      {"file": "shard_00800001.csv", "bytes": 1748156, "sha256": "6a01364129625fcc40f1141ae2e517b297f651e8eeb553372dc755edf564468c"},
+      {"file": "shard_00900001.csv", "bytes": 1747703, "sha256": "d2eec69c1cecf0e2b3f29190d1fa9405d58facdcf948da94856a6d111d532262"},
+      {"file": "shard_01000001.csv", "bytes": 1847846, "sha256": "be94671ccb09c369336757c32d01b6c8462cc9d282bd648d8f4964c7dac22ab6"},
+      {"file": "shard_01100001.csv", "bytes": 1848177, "sha256": "494b7e5ba2775a77689466080951e0da5bad6939efe534e7ec1df127c537ef2b"},
+      {"file": "shard_01200001.csv", "bytes": 1847986, "sha256": "5e95f281c69e51c48391006259a7ab39d2d4c77eae28ae8a89a48dc68c01248d"},
+      {"file": "shard_01300001.csv", "bytes": 1848159, "sha256": "9a139dcc688c5935b3ddc2fef3384cda4dea39f6f11307aa840f27ce22919bde"},
+      {"file": "shard_01400001.csv", "bytes": 1848013, "sha256": "9bccedf2ab4283709b117ab9d5c507079efe65e78c4e6dad21587067b77c0aa0"},
+      {"file": "shard_01500001.csv", "bytes": 1743360, "sha256": "732db1fd98c0f44429dc03c39e9a1e31c80296baec35bd3e8698216a1942015e"}
+    ]
+  },
+  "reproduce": "Sampling: zerotest_rootvar_scout sample-range 4 5 0 0 <start_x> <nodes> <out.csv> per 100k chunk. Audit: zerotest_rootvar_scout samples-status 4 5 100000 shard_*.csv. Solve: zerotest_rootvar_scout solve-files 4 5 0 0 shard_*.csv. Independent check: python3 -c \"from poseidon_attack.verifiers import verify_zerotest; print(verify_zerotest(p_hat, r_f=4, r_p=5))\"",
+  "significance": "First verifier-accepted RF=4/RP=5 zero-test witness. Demonstrates the root-first reduction + measured eliminant degree law 3^(2RF+RP) end-to-end at RF=4 scale (1.59M-node eliminant interpolated, rooted, back-substituted, verified). Reduced-round evidence for the paper's zero-test section; NOT a funded (RF=6) break."
+}

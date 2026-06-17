@@ -1,0 +1,501 @@
+\documentclass[11pt]{article}
+
+% ===========================================================================
+% Concrete cryptanalysis of the 2026 Poseidon1/KoalaBear challenge suite.
+% Submission-mode manuscript. Quantitative measured claims are backed by
+% reproducible artifacts in this repository; projections are labelled explicitly.
+% Any stray \TODO is a hard compile error in submission mode.
+% ===========================================================================
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\emergencystretch=2em
+\hypersetup{
+  pdftitle={Concrete-Complexity Cryptanalysis of the 2026 Poseidon1 / KoalaBear Challenge Suite},
+  pdfauthor={Omer Demirel, Snowfall Finance},
+  hidelinks
+}
+
+\newcommand{\Fp}{\mathbb{F}_p}
+\newcommand{\Fpp}{\mathbb{F}_{p^2}}
+\newcommand{\RF}{R_F}
+\newcommand{\RP}{R_P}
+% Submission mode (default): no internal [V] margin tags; any stray TODO is a hard
+% compile error. Set \submissionfalse for the annotated working draft.
+\newif\ifsubmission
+\submissiontrue
+\ifsubmission
+  \newcommand{\Verified}[1]{}
+  \newcommand{\TODO}[1]{\PackageError{paper}{TODO left in submission: #1}{Resolve or remove it before ePrint.}}
+\else
+  \newcommand{\Verified}[1]{\marginpar{\footnotesize\textcolor{blue}{[V: #1]}}}
+  \newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\fi
+
+\theoremstyle{plain}
+\newtheorem{claim}{Claim}
+\newtheorem{observation}{Observation}
+
+\title{Concrete-Complexity Cryptanalysis of the 2026\\
+       Poseidon1 / KoalaBear Challenge Suite}
+\author{\"{O}mer Demirel\thanks{Snowfall Finance.
+  Email: \texttt{omer@progfi.xyz}. An independent concrete-complexity study of the
+  2026 Poseidon Cryptanalysis Initiative challenge suite.
+  Source code and artifacts are released publicly under the MIT license; see
+  Section~\ref{sec:repro}.}}
+\date{2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report a verifier-exact reimplementation and a concrete-complexity analysis of
+the four 2026 challenge predicates of the Poseidon Cryptanalysis Initiative,
+instantiated over the KoalaBear field $p = 2^{31}-2^{24}+1$ with the Poseidon1
+permutation ($\alpha=3$, width $t=16$). Our contributions are: (i) an independent,
+golden-vector-validated Python/Rust implementation for the default vendored
+Cauchy/Toeplitz+Grain instance, with explicit MDS scope (the organizers accept
+arbitrary admissible MDS matrices); (ii) a reproduction and verifier-instance
+calibration of the CICO-2 resultant degree law $\deg R = 3^{2\RF+\RP}$ from the
+resultant-attack literature, showing that skip-first-rounds is a constant-factor
+refinement rather than a prerequisite on this instance; (iii) a root-first
+resultant model for the zero-test predicate, showing that the fixed-point
+feedforward system has the same CICO-like degree order and giving exact
+verifier-accepted reduced-round witnesses; (iv) an empirical refutation of an
+exploitable low-order multiplicative-character bias in the density predicate, with
+a corrected success-rate baseline of $2^{-48}$; and (v) a no-go cost table for the
+full-strength ($\RF=8,\RP=20$) partial-collision ladder. We do \emph{not} claim a
+solve of any full-round ($\RF=6$) instance; we map the measured cost of
+reaching one and \emph{port and measure} the one structural advance often suggested
+for it --- an amortized resultant --- finding it does \emph{not} bring $\RF=6$ within
+practical reach: priced end-to-end, the cost is dominated by the build-once bivariate
+construction (time $\sim\delta^{3.6}$, memory $\approx 4\delta^2$), not the per-node
+resultant ($<0.1\%$ of the total). Under this model the end-to-end build is on the
+order of $10^{3}$ core-years and $\approx 1.0$\,TiB at $\RF=6/\RP=6$, rising to
+$\approx 9.2$\,TiB at $\RF=6/\RP=7$ and, beyond the current $\RF=6/\RP=8$ public
+record, to $\approx 10^{8}$ core-years and $\approx 745$\,TiB (out-of-core in every
+case) at $\RF=6/\RP=9$. The port is exact at reduced rounds but its full-round economics
+are a measured obstruction.
+Every new measured claim is reproducible, and projections are explicitly labelled
+(Section~\ref{sec:repro}).
+\end{abstract}
+
+\section{Introduction}
+The Poseidon Cryptanalysis Initiative poses four families of challenge predicates
+over an arithmetization-oriented hash. Unlike bit-oriented primitives, Poseidon's
+power-map S-boxes and partial rounds turn each challenge into an explicit polynomial
+system over $\Fp$ or $\Fpp$, so the relevant attack tooling is algebraic:
+resultants, GCDs, and structured root-finding. This paper does not claim a break of
+a full-round instance. It reports the \emph{measured} complexity landscape of
+the 2026 suite, several corrections to widely-held assumptions about the instance,
+and one new structural reduction for the zero-test predicate.
+
+\paragraph{Relation to prior work.} The Initiative's survey of attacks on
+Poseidon and Poseidon2~\cite{survey2024} is the reference baseline for algebraic
+attacks on these instances. Its algebraic-attack section is organized around interpolation and
+Gr\"obner-basis attacks, with CICO interpolation degree $d^R$ and Gr\"obner
+lex-basis estimates such as $C_u=d^{\chi \RF+\RP-2\chi+1}$ (Faug\`ere--Perret /
+BSGL20) and $D=d^{\chi\RP+\RF}$ (Steiner). It does not give a resultant baseline
+for the 2026 KoalaBear CICO-2, density, or zero-test predicates. The closest
+prior resultant work is Bak,
+Bariant, B{\oe}uf, Hostettler, and Jazeron~\cite{cico2026}, who claim the Ethereum
+Foundation's earlier bounties on \emph{Poseidon2} instances with resultant-based
+algebraic attacks, including an amortized bivariate resultant that shares the
+elimination across all interpolation nodes. Our target differs: the 2026 Poseidon
+Cryptanalysis Initiative's \emph{Poseidon1} suite with four predicates (partial
+collision, CICO-2, density, zero-test). The CICO degree law used below is therefore
+not presented as a new asymptotic theorem; our contribution is its exact
+reproduction on the default KoalaBear/Poseidon1 verifier instance and the resulting
+concrete calibration. Recent Gr\"obner-basis work by Grassi, Koschatko, and
+Rechberger~\cite{gbsubspace} studies related Poseidon/Neptune algebraic attacks
+through subspace trails and mode-of-operation effects; our zero-test route is
+instead a resultant-based fixed-point model. Relative to the survey, the
+new contribution here is this executable resultant treatment of the 2026
+Poseidon1/KoalaBear predicates --- especially the root-first zero-test model ---
+plus measured reduced-round witnesses and full-round obstruction data, not a
+full-round solve. We also port the amortized resultant idea
+of~\cite{cico2026} to this zero-test route and validate it at reduced rounds; the
+full-round consequence is still a measured projection, not a bounty solve
+(Section~\ref{sec:limits}).
+
+\paragraph{Scope and honesty.} Every new measured quantitative claim is
+reproducible from the commands and artifacts listed in Section~\ref{sec:repro}.
+We separate results from projections explicitly:
+Table~\ref{tab:status} marks each contribution as \emph{measured},
+\emph{projection}, or \emph{organizer-confirmed scope}, and we claim no
+full-round solve. The exposition is self-contained: challenge predicates,
+reductions, and cost models are defined before use; the repository supplies
+reproducibility evidence rather than replacing the arguments.
+
+\paragraph{Security interpretation.} The survey defines correlation
+intractability as the infeasibility of finding inputs $M_j$ and outputs $V_j$
+with $h(M_j)=V_j$ and a target relation
+$R(M_1,\ldots,M_r,V_1,\ldots,V_r)=\mathrm{true}$ faster than $|\Fp|^r$
+(\cite{survey2024}, Definition~3). The zero-test predicate instantiates such a
+relation: $M$ encodes a low-degree polynomial and the hash output $V$ (viewed in
+$\Fpp$) is required to be a root of that polynomial. This output-is-a-root shape
+is the kind of algebraic relation that appears in polynomial-commitment /
+FRI-style proof-of-knowledge soundness checks, which is why a concrete algebraic
+model of it is of independent interest. Our root-first resultant model produces
+exact reduced-round witnesses for this relation together with a concrete
+obstruction for the full-round target.
+
+\section{Preliminaries}\label{sec:prelim}
+\paragraph{Field.} KoalaBear $p = 2^{31}-2^{24}+1 = 2130706433$, with
+$p-1 = 2^{24}\cdot 127$; the large power of two makes $\Fp$ NTT-friendly. The S-box
+is $x\mapsto x^3$.
+
+\paragraph{Permutation.} Poseidon1 with width $t=16$: an optional initial linear
+layer (for CICO), then $\RF/2$ full rounds, $\RP$ partial rounds (cubing lane $0$
+only), then $\RF/2$ full rounds. The default vendored verifier instance studied
+here uses the Cauchy/Toeplitz matrix $M_{ij} = (i-t-j)^{-1} \bmod p$ and round
+constants from the Grain LFSR of the Poseidon specification. Organizer
+clarification on 2026-06-17 confirmed that submissions may instead use arbitrary
+MDS matrices satisfying the invariant-subspace requirements, and that showing
+some admissible matrices are more vulnerable may qualify for a bonus. Unless
+explicitly stated otherwise, the executable witnesses and concrete-complexity
+measurements in this paper target the default Cauchy/Toeplitz
+\texttt{poseidon-tools} instance.
+
+\paragraph{The four predicates.} \emph{(a) Partial collision:} full-strength
+$\RF=8,\RP=20$, compression mode; collide the first $q\in\{3,\dots,7\}$ outputs of
+$H(\mathrm{seed},X)$. \emph{(b) CICO:} $\RF=6$, $\RP\in\{6,8,10\}$,
+\texttt{permutation\_plus\_linear}; two-in/two-out ($k=2$). \emph{(c) Density:}
+$\RF=6,\RP>5$, $d=2$ attacker-chosen zero positions, decode each output through
+$x^{(p-1)/16}$. \emph{(d) Zero-test:} $\RF=6,\RP>5$, a degree-$\le 7$ polynomial
+$P$ over $\Fpp=\Fp[x]/(x^2-3)$ whose first hashed output is a root of $P$.
+The Initiative page accessed on 2026-06-17 lists CICO $\RF=6/\RP=6$ and
+$\RF=6/\RP=8$ as verified, leaves CICO $\RP=10$ listed, and reports the current
+zero-test record as $\RF=6/\RP=8$~\cite{initiative}.
+The survey's 31-bit 128-bit-security row refers to Poseidon2 over the Mersenne
+field M31; the 2026 Initiative separately defines the Poseidon-31
+Poseidon1/KoalaBear instance studied here, and that instance is the one
+used for all executable claims below.
+
+\section{Verifier-exact reimplementation}\label{sec:verifier}
+We reimplemented the primitive and all four acceptance predicates independently in
+Python (reference) and Rust (Montgomery-arithmetic core), and cross-checked them
+against published golden vectors. \Verified{golden 14/14}
+
+\begin{observation}[Instance / MDS scope]
+The challenge admits any MDS matrix satisfying the no-invariant-subspace-trail
+conditions; the Plonky3 width-16 circulant is an admissible example, and the
+vendored \texttt{poseidon-tools} repository ships the Cauchy/Toeplitz matrix
+$M_{ij}=(i-t-j)^{-1}$ with Grain constants as its default test vector. Because
+acceptance is instance-specific, a solution computed for one admissible MDS does
+not by itself satisfy a verifier pinned to another, so a submission must fix and
+publish its exact MDS and verify against that instance. The two matrices differ
+in a documented way: the circulant \emph{fails} the Poseidon
+minimal-polynomial criterion ($16 \mid p-1$) yet \emph{passes} the
+reference implementation's \texttt{verify\_mds\_matrix} checks, so both are
+accepted by the admissibility gate. Our golden suite anchors
+on (i) the published Plonky3 permutation vector
+(round-schedule check), (ii) the default Cauchy+Grain value
+$\mathrm{perm}(0^{16})_0 = 1393439926$, and (iii) the published $t=3$ partial
+collision (accept $t\le 3$, reject $t=4$). \Verified{mds\_matrix; golden}
+All executable witnesses and concrete-complexity measurements below use the
+default Cauchy/Toeplitz instance; the search for an admissible but more attackable
+MDS is a separate open direction.
+\end{observation}
+
+\section{CICO-2: reproduced resultant degree law}\label{sec:cico}
+We model CICO-2 as a bivariate system in two free input coordinates $X,Y$ and
+eliminate $Y$ by a resultant $R(X)=\mathrm{Res}_Y(\text{out}_0,\text{out}_1)$, whose
+$\Fp$-roots back-substitute to solutions.
+
+\begin{claim}[Verifier-instance degree reproduction]\label{cl:cicodeg}
+For the as-built bivariate system (no skip-first-rounds),
+$\deg R = 3^{\,2\RF+\RP}$. \Verified{cico\_golden; test\_skip\_and\_gcd 5/5}
+\end{claim}
+
+This was measured exactly at $(\RF,\RP)\in\{(2,0),(2,1),(2,2)\}$, giving
+$\deg R = 81,243,729$. The naive B\'ezout product would give $3^{2(\RF+\RP)}$; the
+measured law is a constant factor $3^2=9$ smaller, equal to the skip-first-rounds
+ideal degree $D_I=3^{2(\RF-1)+\RP}$ times $9$. Consequently skip-first-rounds buys a
+\emph{constant} $9\times$, not an $\RP$-dependent speedup: it is a refinement, not a
+prerequisite. This matches the resultant-based CICO analysis of
+Bak et al.~\cite{cico2026}; the contribution here is the default-verifier
+reproduction, exact KoalaBear calibration, and downstream cost model. For the
+challenge instances this yields the as-built root-find degrees
+$3^{12+\RP}$, i.e.\ $2^{28.5}, 2^{31.7}, 2^{34.9}$ for $\RP=6,8,10$.
+
+\paragraph{Brute force is a calibration baseline only.}
+A generic CICO-2 search costs $p^2 = 2^{62}$ permutation evaluations; at the measured
+native throughput ($\sim 5\times 10^5$ evaluations/s single-thread) this is
+$\approx 2.85\times 10^{5}$ core-years, confirming that an algebraic attack is
+mandatory and that a single-machine solve is out of scope. \Verified{search;
+artifacts/cico\_rp10\_relaxed\_baseline.json}
+
+\section{Zero-test: a root-first resultant model}\label{sec:zerotest}
+Write a candidate as $P(z) = (z-r)\,G(z)$ with $r\in\Fpp$ and a degree-$\le 6$
+cofactor $G$; then $P(r)=0$ by construction, and the only coupling is the fixed-point
+condition $r = a_0 := H(\hat P)_0 \in \Fpp$, where $\hat P$ is the flat coefficient
+vector hashed in compression mode. Crucially, in compression mode the degree-$0$
+coefficient of $P$ enters both $\hat P$ and, via the feedforward
+$\mathrm{out}_i + \mathrm{in}_i$, the output $a_0$.
+
+\begin{claim}[Root-first CICO-like eliminant]\label{cl:ztcollapse}
+Solving the fixed-point $a_0=r$ via resultant elimination yields an eliminant of
+degree $3^{\,2\RF+\RP}$ (CICO-like), \emph{not} the generic two-variable B\'ezout
+product $3^{\,2(\RF+\RP)}$. \Verified{zerotest\_calibrate}
+\end{claim}
+
+This was measured directly (Table~\ref{tab:ztcal}). The distinguishing rows
+$\RP\ge 1$ are decisive: at $(\RF,\RP)=(2,1)$ the eliminant degree is $243=3^5$, not
+$729=3^6$; at $(2,2)$ it is $729=3^6$, not $6561=3^8$. Thus the zero-test exact solve
+is of the \emph{same degree order} as CICO, with two extra degrees of freedom in the
+parameterization. Once the root-first fixed-cofactor reduction is made, the degree
+value is expected from the CICO-like two-equation/two-variable shape; the novel
+piece is the root-first resultant formulation and its exact reduced-round
+verification. This is, to our knowledge, the first resultant-based model of this
+zero-test predicate. It is complementary to Gr\"obner-basis treatments of related
+Poseidon algebraic systems, including subspace-trail attacks~\cite{gbsubspace},
+which do not give this fixed-point zero-test route.
+
+\begin{table}[ht]\centering
+\caption{Measured zero-test root-first eliminant degree vs.\ the two hypotheses.}
+\label{tab:ztcal}
+\begin{tabular}{ccccc}
+\toprule
+$\RF$ & $\RP$ & measured & $3^{2\RF+\RP}$ (CICO-like) & $3^{2(\RF+\RP)}$ (generic)\\
+\midrule
+2 & 1 & 243  & \textbf{243}  & 729 \\
+2 & 2 & 729  & \textbf{729}  & 6561 \\
+4 & 0 & 6561 & \textbf{6561} & 6561 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Exact reduced-round witnesses.}
+We obtained verifier-accepted exact witnesses (residual $(0,0)$ in $\Fpp$) at
+$\RF=4,\RP=5$ via a fixed-root/variable-cofactor coordinate slice---a degree
+$3^{13}=1{,}594{,}323$ eliminant interpolated over $1{,}594{,}324$ clean samples
+with one $X$-root and one $Y$-candidate, independently re-verified in Python---at
+$\RF=4,\RP=4$ via both coordinate and affine-plane slices, and at $\RF=2,\RP=4$
+via reproducible split-shard round trips.
+\Verified{VALIDATION.md; artifacts} The generic single-witness success rate of the
+predicate is $7/p^2 \approx 2^{-59.2}$, so these are genuine algebraic solves, not
+search hits.
+
+\section{Density: no exploitable low-order character bias}\label{sec:density}
+The density predicate requires all 16 decoded outputs --- decoded through the
+order-16 multiplicative character $x\mapsto x^{(p-1)/16}$ --- to fall in two
+attacker-chosen residue classes.
+
+\begin{claim}[Corrected baseline and measured uniformity]
+The brute-force success rate is $(d/r)^{16} = (2/16)^{16} = 2^{-48}$, not $2^{-64}$:
+each output may hit \emph{either} of the $d=2$ chosen classes. Empirically, the
+decode-class distribution at $\RF=6,\RP=6$ is statistically uniform
+($\chi^2 \approx 14$ on 15 d.o.f.), with no first- or second-order coset bias, and
+the zero \emph{value} maps to index $0$ only with probability $1/p$ --- so no zero
+position is special. \Verified{profile\_density\_decode}
+\end{claim}
+
+This is a (modest) negative result: the natural multiplicative-character shortcut
+does not exist at the round counts tested, so density requires a genuinely new
+construction.
+
+\section{Partial collision: a full-strength no-go table}\label{sec:collision}
+The collision instance is full-strength $\RF=8,\RP=20$ (a frequent misreading takes
+it as $\RF=6$). The birthday cost for $q=4$ is $\sqrt{p^4}=2^{62}$. The Cauchy MDS used
+by the default reference instance is chosen to defeat invariant/subspace trails, and
+known subspace-trail bounds do not
+survive the full-round wrapper. We therefore record a no-go cost table rather than an
+attack: the permutation degree is $3^{28}\approx 2^{44.4}$ and a CICO-style algebraic
+collision system has ideal degree $3^{34}\approx 2^{53.9}$, both dominated, with no
+structural lever observed. \Verified{partial\_collision\_verifier; constants.py}
+
+\section{Reproducibility}\label{sec:repro}
+All claims reproduce from the repository. The Python guards are
+\path{tests/test_golden.py} (18/18), \path{test_poly.py},
+\path{test_cico_attack.py}, \path{test_skip_and_gcd.py} (5/5), and
+\path{profile_density_decode.py}. The Rust guards in \path{core_rs} include
+\path{golden} (14/14), \path{poly_golden}, \path{cico_golden},
+\path{zerotest_golden} (11/11), \path{zerotest_calibrate},
+\path{zt_amortized_spike}, and \path{zt_resultant_fast}. The independent
+verifiers are built against the default Cauchy+Grain instance and agree with the
+published golden anchors. The full source, the durable JSON artifacts, and the
+reproduction commands above are released in the accompanying public repository.
+
+\section{Summary: results versus projections}\label{sec:summary}
+Table~\ref{tab:status} separates what we measured from what we project, so the
+status of every contribution is unambiguous to a reviewer.
+\begin{table}[ht]\centering\small
+\caption{Status of each contribution.}\label{tab:status}
+\begin{tabular}{@{}p{0.68\linewidth}p{0.23\linewidth}@{}}
+\toprule
+Item & Status \\
+\midrule
+Cauchy/Grain default-verifier exactness (golden 14/14) & measured \\
+CICO-2 degree law $3^{2\RF+\RP}$ on the default instance & reproduced / measured \\
+Zero-test root-first resultant model & measured \\
+$\RF=4,\RP=5$ zero-test witness (residual $(0,0)$) & measured / verified \\
+$\RF=6$ un-amortized economics ($\RP=6,\ldots,9$; $\RP=9$ first record-improving) & measured projection \\
+Amortized-resultant port (exact)~\cite{cico2026} & measured / verified \\
+Fast resultant sub-quadratic (exponent $\approx 1.22$) & measured \\
+Amortized $\RF=6$ end-to-end cost ($\RP=6,\ldots,9$; build-dominated) & measured projection \\
+Custom-MDS acceptance & organizer confirmed; unmeasured attack surface \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Limitations and open problems}\label{sec:limits}
+\begin{itemize}
+\item \textbf{The $\RF=6$ gate (measured: cluster-scale, and \emph{not} closed by amortization).} \emph{Un-amortized route.} Exact witnesses here are reduced-round ($\RF\in\{2,4\}$);
+we resolve the $\RF=6$ economics by \emph{directly} measuring the real
+interpolated-resultant route rather than a proxy. At each of the $D$ interpolation
+nodes the attack builds the residual pair $f_0,f_1$ (a symbolic permutation over
+$\Fp[X]$ in the root-first state) and computes one $\mathrm{Res}_Y(f_0,f_1)$. We
+measured the per-node cost on the feasible ladder $\RP=2,\dots,5$ (residual degree
+$3^{8},\dots,3^{11}$) and confirmed it against a directly-measured $\RF=6,\RP=6$
+node, where the per-node cost at residual degree $3^{12}$ is
+$3.74+112.9=116.7$\,s (build plus resultant). The resultant scales as
+$\text{degree}^{1.96\text{--}2.01}$ because its quotient sequence is generically
+length-$2$ ($\overline{q}\approx 2.03$), so the elimination is $O(n^2)$ Euclidean
+and the Half-GCD (next bullet) does \emph{not} engage on the un-amortized route.
+Eliminant degree $D=3^{2\RF+\RP}$ gives: $\RP=6$ (at or below the public record)
+$D=3^{18}\Rightarrow \approx 1.4\times10^3$ core-years; $\RP=7$ (below the
+current public record) $D=3^{19}\Rightarrow \approx 3.7\times10^4$ core-years.
+The Initiative page accessed on 2026-06-17 reports the current zero-test record as
+$\RF=6/\RP=8$, so $\RP=9$ is the first public-record-improving target; the same
+measured fit projects the un-amortized route to $\approx 9.6\times10^5$ core-years
+at $\RP=8$ and $\approx 2.4\times10^7$ core-years at $\RP=9$. The line-GCD route is
+strictly worse (codimension-2: $\sim 1/p$ solutions per line, hence $\sim p\approx
+2.1\times10^9$ lines at comparable per-line cost). This corrects an earlier proxy
+that used a Half-GCD stand-in for the elimination and undercounted the per-node
+cost by $\approx 6\times$; even integrating a Half-GCD as a per-node \emph{constant} ($\sim 7\times$ at this
+degree) on the un-amortized route leaves the floor far above feasibility already
+below the current record, and astronomically so for $\RP\ge 9$.
+
+\emph{Amortized route.} We therefore \emph{ported} the structured/amortized resultant of~\cite{cico2026} ---
+which shares the elimination across all $D$ nodes by evaluation--interpolation ---
+to the Poseidon1/KoalaBear zero-test route and validated it exactly: the amortized
+eliminant matches the per-node oracle coefficient-for-coefficient at
+$(\RF,\RP)\in\{(2,1),(2,2),(2,4)\}$ and recovers verifier-accepted witnesses. On
+\emph{real} residuals the fast resultant is sub-quadratic with a \emph{measured}
+exponent $\approx 1.22$ (exact-equal to schoolbook through degree $3^{12}$), so the
+per-node speedup is a growing ratio, not a fixed constant; the resulting per-node
+cost model reproduces the \cite{cico2026} $\RF=6,\RP=4$ Poseidon2 datapoint
+($312$ core-hours) to within $0.5\%$. Crucially, however, this per-node fast resultant is \emph{not} the dominant cost.
+Instrumenting all five end-to-end stages on exact-gated reduced rounds (build,
+multipoint evaluation, resultant, interpolation, root recovery) shows the per-node
+resultant is $<0.1\%$ of the total, while the \emph{build-once} bivariate
+construction scales as $\approx\delta^{3.6}$ (measured, $R^2=0.998$) and dominates
+($64$--$76\%$). The end-to-end projection (optimistic skipped degree
+$\delta=3^{\RF-1+\RP}$) is therefore $\approx 1.0\times10^{3}$ core-years at
+$\RF=6/\RP=6$ and $\approx 4.1\times10^{4}$ core-years at $\RF=6/\RP=7$; at the
+current-record $\RP=8$ it is $\approx 2.1\times10^{6}$ core-years, and at the first
+public-record-improving $\RP=9$ it is $\approx 1.1\times10^{8}$ core-years. The
+build stage \emph{alone} is $\approx 6\times10^{2}$ core-years even at $\RP=6$ with
+a free eval. The skip does \emph{not} transfer to
+the root-first route (its kernel directions lie outside the image of the rigid
+$(z-r)G(z)$ map), so the implemented naive-degree cost is a further $\approx 56\times$.
+The build-once bivariate is dense, $\approx 4\delta^2$ bytes ($\approx 1.0$\,TiB at
+$\RP=6$, $\approx 9.2$\,TiB at $\RP=7$, $\approx 83$\,TiB at $\RP=8$, and
+$\approx 745$\,TiB at $\RP=9$), out-of-core in every case. This memory-access wall is independently
+corroborated by the Ethereum-Foundation-co-authored NTT lower bound of
+Zhao--Sanso--Vitto--Ding~\cite{nttlower}, proving the NTT memory-access cost grows
+at least as $n^{4/3}$. The amortized resultant is thus exact but does \emph{not} bring
+$\RF=6$ within reach; the open question is whether an out-of-core / blockwise build can
+achieve \emph{both} sub-$\delta^2$ memory and sub-$\delta^{3.6}$ time.
+\Verified{zt\_resultant\_fast; zt\_amortized\_spike;
+artifacts/fast\_resultant\_scaling\_probe.json}
+\begin{center}
+\small
+\textbf{$\RF=6$ zero-test economics under the default-MDS model.}
+RP=8 is the current public record on the 2026-06-17 Initiative page; RP=9 is
+therefore the first public-record-improving target. Figures are projected compute
+in core-years at the measured per-node and build scalings.
+
+\begin{tabular}{clccc}
+\toprule
+$\RP$ & role & un-amortized (core-yr) & amortized end-to-end (core-yr) & build memory \\
+\midrule
+6 & at/below record & $\approx 1.4\times10^3$ & $\approx 1.0\times10^3$ & $\approx 1.0$ TiB \\
+7 & below record & $\approx 3.7\times10^4$ & $\approx 4.1\times10^4$ & $\approx 9.2$ TiB \\
+8 & current record & $\approx 9.6\times10^5$ & $\approx 2.1\times10^6$ & $\approx 83$ TiB \\
+9 & first improving & $\approx 2.4\times10^7$ & $\approx 1.1\times10^8$ & $\approx 745$ TiB \\
+\bottomrule
+\end{tabular}
+\end{center}
+\item \textbf{Per-node resultant wall (partially addressed).} The dominant cost at
+scale is the resultant/GCD of degree-$3^{\RF+\RP}$ univariates. We implemented and
+verified a recursive Half-GCD (validated against the schoolbook GCD on 241/241
+random, planted-factor, and degenerate cases). Measured against the Euclidean
+baseline it crosses over near degree $6.5\times 10^4$ and reaches $7\times$ at
+$\deg = 3^{12} = 531441$ --- the RF$=6$/RP$=6$ per-node shape --- with the margin
+growing as $n$ increases. It is therefore the enabler at the $\RF=6$ gate; at the
+current $\RF=4,\RP=5$ frontier ($\deg = 3^9 = 19683$) Euclidean is still faster, so
+that frontier stays on the schoolbook path. Lowering the crossover (base-case
+tuning, fewer allocations) is the remaining refinement. \Verified{hgcd\_bench}
+\item \textbf{Custom-MDS attack surface.} The organizer clarification makes MDS
+choice an admissible attack parameter, provided the matrix satisfies the
+invariant-subspace requirements. The current executable witnesses and economics
+are for the default Cauchy/Toeplitz instance only. A disciplined next experiment is
+therefore a reduced-round custom-MDS scout over Cauchy variants, circulant/Toeplitz
+families, and diagonal-plus-low-rank families, gated by the reference
+\texttt{verify\_mds\_matrix} check and measuring not only eliminant degree but also
+support growth, bivariate coefficient density, build memory, factor rate, and
+root-to-witness acceptance. A vulnerable admissible family that preserves degree
+but reduces the dense build by a large factor would be a genuine new attack
+surface; we do not claim such a family here.
+\item \textbf{Confidential frontier.} The density/zero-test records are confidential;
+a higher unrevealed submission cannot be excluded.
+\item \textbf{Official-verifier gate.} Witnesses should be re-checked through the
+official reference verifier at a pinned commit before any submission.
+\end{itemize}
+
+\section{Conclusion}
+We have mapped the concrete-complexity landscape of the 2026 Poseidon1/KoalaBear
+challenge suite: a verifier-exact reimplementation for the default
+Cauchy/Toeplitz+Grain instance, a reproduced CICO-2 degree law on that verifier, a
+new root-first resultant model that puts the zero-test eliminant in CICO order with
+exact reduced-round witnesses (through
+$\RF=4,\RP=5$), a corrected density baseline with measured uniformity, and a
+full-strength collision no-go table. \textbf{We~do~not~claim a solve of any
+full-round ($\RF=6$) instance.} We measure the cost of reaching one and \emph{port} the amortized resultant
+of~\cite{cico2026} to this Poseidon1 zero-test route, validating it exactly at
+reduced rounds; priced end-to-end, however, the build-once bivariate construction
+dominates the per-node resultant and leaves the $\RF=6$ route far outside practical
+reach under the current implementation model: on the order of $10^{3}$ core-years
+and $1$\,TiB at $\RF=6/\RP=6$, growing to hundreds of TiB and $\sim 10^{8}$
+core-years at the $\RP=9$ target beyond the current public record. The load-bearing open question
+is therefore not merely faster resultants, but whether a custom admissible MDS, a
+blockwise build, or a different algebraic formulation can reduce the dense build
+itself.
+
+% Bibliography verified/updated 2026-06-17 against available primary pages
+% (Initiative page) and previously verified ePrint metadata. The 2025/1916
+% entry was corrected from the supplied BibTeX check.
+% Corrections applied: hades 2020/179 -> 2019/1107 (2020/179 is a different paper,
+% Keller-Rosemarin "Mind the Middle Layer"); graeffe full title + authors Zhao,Ding;
+% cico2026 exact title + full 5-author list, "(INRIA/DGA)" affiliation removed.
+\begin{thebibliography}{9}
+\raggedright
+\bibitem{poseidon} L.~Grassi, D.~Khovratovich, C.~Rechberger, A.~Roy, M.~Schofnegger.
+  \emph{Poseidon: A New Hash Function for Zero-Knowledge Proof Systems}. ePrint
+  2019/458.
+\bibitem{hades} L.~Grassi, R.~L\"uftenegger, C.~Rechberger, D.~Rotaru,
+  M.~Schofnegger. \emph{On a Generalization of Substitution-Permutation Networks:
+  The HADES Design Strategy}. ePrint 2019/1107 (Eurocrypt 2020).
+\bibitem{graeffe} Z.~Zhao, J.~Ding. \emph{Breaking Poseidon Challenges with Graeffe
+  Transforms and Complexity Analysis by FFT Lower Bounds}. ePrint 2025/950.
+\bibitem{cico2026} A.~Bak, A.~Bariant, A.~B{\oe}uf, M.~Hostettler, G.~Jazeron.
+  \emph{Claiming bounties on small scale Poseidon and Poseidon2 instances using
+  resultant-based algebraic attacks}. ePrint 2026/150.
+\bibitem{survey2024} L.~Grassi, C.~Rechberger, M.~Schofnegger, D.~Khovratovich.
+  \emph{Survey of attacks on Poseidon and Poseidon2}. Version dated 22 November
+  2024, linked from the Poseidon Cryptanalysis Initiative.
+\bibitem{gbsubspace} L.~Grassi, K.~Koschatko, C.~Rechberger.
+  \emph{Poseidon and Neptune: Gr\"obner Basis Cryptanalysis Exploiting Subspace
+  Trails}. ePrint 2025/954 (TOSC 2025).
+\bibitem{nttlower} Z.~Zhao, A.~Sanso, G.~Vitto, J.~Ding.
+  \emph{Graeffe-Based Attacks on Poseidon and NTT Lower Bounds}. ePrint 2025/1916.
+\bibitem{initiative} Ethereum Foundation. \emph{Poseidon Cryptanalysis Initiative}.
+  \url{https://www.poseidon-initiative.info/}. Accessed 2026-06-17.
+\end{thebibliography}
+
+\end{document}

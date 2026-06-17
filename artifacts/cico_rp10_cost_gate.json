@@ -1,0 +1,22 @@
+{
+  "lane": "#4 CICO RP=10 — hard cost gate",
+  "date": "2026-06-03",
+  "gate_decision": "NO-GO",
+  "projection_class": "current_stack_non_amortized_non_crt_projection",
+  "not_a_lower_bound": true,
+  "blocked_missing_implementations": ["amortized_resultant", "kronecker_or_crt_ntt_for_rp10"],
+  "decision": "NO_GO_FOR_CURRENT_STACK_CLUSTER_SPEND",
+  "degree_law": "deg(R) = 3^(2*RF+RP) = 3^22 = 31381059609 interpolation nodes",
+  "per_node_residual_degree": "3^(RF+RP) = 3^16 = 43046721",
+  "structural_block": "the per-node symbolic build cubes polynomials past the NTT single-mul cap (~2^24 = 16777216 < 3^16 = 43046721); building even ONE node requires an unimplemented Kronecker/CRT multiplication path",
+  "projected_per_node_resultant_s": 654000,
+  "projected_per_node_basis": "measured resultant law ~c*deg^1.96 anchored at (deg 177147, 13.74s); evaluated at deg 3^16 (~182 core-hours/node)",
+  "full_resultant_route": {
+    "core_seconds": 2.05e16,
+    "core_years": 6.5e8
+  },
+  "brute_force_baseline": "p^2 = 2^62 ~ 2.85e5 core-years (paper §4)",
+  "caveat": "Projection for the CURRENT stack only (non-amortized resultant; no Kronecker/CRT NTT for RP=10 degrees). NOT a lower bound on CICO RP=10 in general — an amortized-resultant elimination and/or Kronecker/CRT multiplication could change the cost class. This is a decision input for cluster spend under the implementation we actually have.",
+  "verdict": "Under the current non-amortized, non-Kronecker/CRT stack: both the algebraic (3^22 nodes x ~182 core-hr/node) and brute-force routes are astronomically out of reach, and the algebraic build is not even feasible without Kronecker/CRT mul. The hard cost gate fails decisively for the current stack. (RP=10 is far beyond the RF=6/RP=6 reproduction wall of ~1.4e3 core-years measured in zt_gate_calibrate.)",
+  "reproduce": "cargo run --release --bin cico_golden (degree law); cargo run --release --bin gate_calibrate (NTT cap note); cargo run --release --bin zt_gate_calibrate (resultant law)"
+}

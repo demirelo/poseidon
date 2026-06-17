@@ -1,0 +1,3 @@
+vendored from https://github.com/khovratovich/poseidon-tools
+commit 60075da7c0521d9493749a035b1f30d4eda37138 (2026-05-14)
+Reference/audit only by default; executed only through explicit submission/verify_with_official.py --official gates.

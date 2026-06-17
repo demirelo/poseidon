@@ -1,0 +1,36 @@
+{
+  "gate": "zerotest_interpolated_resultant_route",
+  "date": "2026-06-03",
+  "supersedes": "gate_calibrate (CICO-line + Half-GCD proxy)",
+  "method": "measured real per-node = build (symbolic permutation over F_p[X], root-first state) + pl::resultant(f0,f1); log-log fit over RP=2..5; project D=3^(2RF+RP) interpolation nodes; cross-checked against a directly-measured RF=6/RP=6 node",
+  "ladder": [
+    {"rf": 6, "rp": 2, "residual_degree": 6561, "build_s": 0.0425, "resultant_s": 0.0222},
+    {"rf": 6, "rp": 3, "residual_degree": 19683, "build_s": 0.0814, "resultant_s": 0.1615},
+    {"rf": 6, "rp": 4, "residual_degree": 59049, "build_s": 0.2822, "resultant_s": 1.5974},
+    {"rf": 6, "rp": 5, "residual_degree": 177147, "build_s": 0.9073, "resultant_s": 13.7393}
+  ],
+  "fit": {"resultant_exponent": 1.964, "build_exponent": 0.949},
+  "ground_truth_rf6_rp6_node": {
+    "residual_degree": 531441,
+    "build_s": 3.7403,
+    "resultant_s": 112.9314,
+    "per_node_s": 116.6717,
+    "resultant_steps": 516702,
+    "avg_quotient_len": 2.029,
+    "q_fast": 2,
+    "source_cmd": "zerotest_cofactor_scout 6 6 1 full 0 1 1",
+    "note": "directly measured single node; confirms projected per_node_naive_s=118.8 within 2%"
+  },
+  "hgcd_speedup_at_scale": 7,
+  "projections": [
+    {"rf": 6, "rp": 6, "role": "below_or_at_public_record", "residual_degree": 531441, "eliminant_degree_nodes": 387420489, "per_node_naive_s": 118.8, "per_node_hgcd_floor_s": 19.0, "naive": {"core_years": 1460}, "hgcd_floor": {"core_years": 233}},
+    {"rf": 6, "rp": 7, "role": "below_current_public_record", "residual_degree": 1594323, "eliminant_degree_nodes": 1162261467, "per_node_naive_s": 1013.7, "per_node_hgcd_floor_s": 150.5, "naive": {"core_years": 37360}, "hgcd_floor": {"core_years": 5547}},
+    {"rf": 6, "rp": 8, "role": "current_public_record", "residual_degree": 4782969, "eliminant_degree_nodes": 3486784401, "per_node_naive_s": 8649.7, "per_node_hgcd_floor_s": 1259.7, "naive": {"core_years": 956359}, "hgcd_floor": {"core_years": 139310}},
+    {"rf": 6, "rp": 9, "role": "first_public_record_improving_target", "residual_degree": 14348907, "eliminant_degree_nodes": 10460353203, "per_node_naive_s": 73806.6, "per_node_hgcd_floor_s": 10689.7, "naive": {"core_years": 24481341}, "hgcd_floor": {"core_years": 3547052}}
+  ],
+  "reproduce": {
+    "ladder_and_projection": "cargo run --release --bin zt_gate_calibrate 0.05",
+    "ground_truth_node": "cargo run --release --bin zerotest_cofactor_scout 6 6 1 full 0 1 1"
+  },
+  "note": "naive route uses the current O(n^2) Euclidean pl::resultant (quotient sequence is generically length-2, so Half-GCD does not engage). hgcd_floor assumes the validated recursive Half-GCD is integrated into the resultant (tracked follow-up). The Initiative page checked 2026-06-17 lists zero-test RF=6/RP=8 as the current public record, so RP=9 is the first public-record-improving target. Even below-record RP=7 is far above feasibility on this route; RP>=9 is astronomically out of reach without a structural build collapse."
+}

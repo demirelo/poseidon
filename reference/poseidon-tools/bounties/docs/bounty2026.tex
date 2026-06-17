@@ -1,0 +1,235 @@
+\documentclass{article}
+\usepackage{graphicx,amssymb,amsmath,comment} % Required for inserting images
+
+\title{Bounty challenges for Poseidon Initiative 2026}
+
+
+\begin{document}
+\maketitle
+\section{Notation}
+\begin{itemize}
+    \item Field $\mathbb{F}$ of size $p$.
+    \item $H$ -- variable-input-length hash function.
+\end{itemize}
+
+\section{Problem descriptions}
+
+\subsection{{Poseidon Prize}: partial collision search}
+
+\begin{itemize}
+    \item
+\textbf{Attacked primitive:} hash function $H:\mathbb{F}_p^{*}\mapsto \mathbb{F}_p^{\ell}$.
+\item
+\textbf{Parameters:} $ t\in\mathbb{Z}^{+}$ with condition $t\leq \ell$.
+
+Challenge: find $x\neq y\in\mathbb{F}^r$ such that
+\begin{align}
+(a_0,a_1,\ldots,a_{\ell-1}) &:=H(x) \\
+(b_0,b_1,\ldots,b_{\ell-1}) &:=H(y) \\
+a_i &= b_i ,\; i=0,1,\ldots,t-1.
+\end{align}
+
+\end{itemize}
+
+\subsection{Density challenge}
+Parameters:
+\begin{itemize}
+    \item
+\textbf{Attacked primitive:} hash function $H:\mathbb{F}_p^{*}\mapsto \mathbb{F}_p^{k\ell}$.
+\item
+\textbf{Parameters:} $d,r,t\in\mathbb{Z}^{+}$ with condition $t\leq k\ell$.
+
+\item \textbf{Decoding function:} $\mathrm{Decode}_{p,d}:\;\mathbb{F}_p\mapsto \mathbb{Z}_r^k$.
+\end{itemize}
+Challenge: find $S\in\mathbb{F}^r$ such that
+\begin{align}
+\#\{i:\,S[i]=0\}&\leq d\\
+(a_0,a_1,\ldots,a_{\ell-1}) &:=H(S) \\
+(i_0,i_1,\ldots,i_{k\ell-1})&:=\mathrm{Decode}(a_0)||\mathrm{Decode}(a_1)||\cdots||\mathrm{Decode}(a_{\ell-1})\\
+S[i_j]&=0,\; j\in[t]
+\end{align}
+
+\subsection{Zero-test challenge}
+
+\begin{itemize}
+    \item
+\textbf{Attacked primitive:} hash function $H:\mathbb{F}_p^{*}\mapsto \mathbb{F}_p^{r\ell}$.
+\item
+\textbf{Parameters:} $d,r,s\in\mathbb{Z}^{+}$ with condition $s\leq \ell$.
+
+\end{itemize}
+Challenge: find multivariate polynomial  $P:\left(\mathbb{F}^r\right)^s\mapsto\mathbb{F}^r$ defined over the extension field $\mathbb{F}^r$ such that
+\begin{align}
+1\leq \mathrm{degree}(P)&\leq d\\
+(a_0,a_1,\ldots,a_{\ell-1}) &:=H(\widehat{P}) \\
+P(a_0,a_1, \ldots,a_{s-1})&=\mathbf{0}\in\mathbb{F}^r\label{eq:cond-zero}
+\end{align}
+where $\widehat{P}$ is the vector of the coefficients of $P$ expressed as elements of the base field $\mathbb{F}$. The length of  $\widehat{P}$ in the base field units is then $(d+1)r$ for $s=1$ and about $\frac{r(s+1)^d}{d!}$ for bigger $s$.
+
+
+\subsection{CICO challenge}
+\begin{itemize}
+    \item
+\textbf{Attacked primitive:} permutation function
+$P:\mathbb{F}_p^{t}\mapsto \mathbb{F}_p^{t}$.
+\item
+\textbf{Parameters:} $k\in\mathbb{Z}^{+}$ with condition $k\leq t$. Constants
+$C_1,C_2,\ldots,C_{2k}\in\mathbb{F}_p$.
+
+\end{itemize}
+Challenge: find input $(x_{k+1},x_{k+2},\ldots,x_t)\in\mathbb{F}_p^{t-2}$
+such that
+\begin{equation}
+P(C_1,C_2, \ldots,C_k,x_{k+1},x_{k+2})=(C_{k+1},C_{k+2},\ldots,C_{2k},*,\ldots,*)
+\in\mathbb{F}^r\label{eq:cico-k}
+\end{equation}
+where $*$ means arbitrary value.
+
+
+\begin{comment}
+\subsection{Multi-target collision challenge}
+Parameters:
+\begin{itemize}
+    \item
+\textbf{Attacked primitive:} hash function $H:\mathbb{F}_p^{*}\mapsto \mathbb{F}_p^{\ell}$.
+\item
+\textbf{Parameters:} $k\in\mathbb{Z}^{+}$ .
+\end{itemize}
+
+Challenge: find   messages $M_0,M_1,\ldots,M_{k-1}$, integer $j\in[k]$,
+message $M'\neq M_j$ such that
+\begin{align}
+h&:=H(M_1,M_2,\ldots,M_k)\\
+h_i&:=  H(h,i,M_i),\quad i\in[k]\\
+h_j &=H(h,j,M')\label{eq:mtc-cond}
+\end{align}
+
+\end{comment}
+
+\section{Attacks}
+
+\subsection{Partial collision}
+
+Modelling $H$ as a random oracle, we obtain that all  hash outputs  have equal probability to appear. Then the probability that among $m$ hash calls there is a collision pair is at most
+$$
+\frac{m(m-1)}{2p^{t}}
+$$
+
+
+
+\subsection{Density}
+
+We consider the simple case where $k=1$.
+
+Modelling $H$ as a random oracle, we obtain that each string $(a_0,a_1,\ldots,a_{\ell-1})$ has equal probability to appear. Let $\mu$ be the probability distribution of the $\mathrm{Decode}$  function when the input is uniformly random. Let us order the elements of $\mathbb{Z}_r$ in the descending order of their probabilities:
+$$
+\mu(i_0)\geq \mu(i_1)\geq \cdots \geq \mu(i_{r-1})
+$$
+Then the adversary strategy would be to query strings $S$ with the condition
+$$
+S[i_0]=S[i_1]=\ldots=S[i_{d-1}]=0
+$$
+The adversary wins if for $(a_0,a_1,\ldots,a_{\ell-1}) :=H(S)$ it holds that
+$$
+\mathrm{Decode}(a_i)\in\{i_1,i_2,\ldots,i_d\} i\in[\ell]
+$$
+which happens with probability $\left(\sum_{j\in[d]}\mu(i_j)\right)^{\ell}$
+
+\subsection{Zero-test}
+
+Modelling $H$ as a random oracle, we obtain that each string $(a_0,a_1,\ldots,a_{\ell-1})$ has equal probability to appear. The number of roots of $\mathcal{P}$ is at most $d$, so the probability that  \eqref{eq:cond-zero} holds is $\frac{d}{p^r}$.
+\begin{comment}
+
+\subsection{Multi-target collision}
+
+Modelling $H$ as a random oracle, we obtain that all  hash output combinations $h,\{h_i\}$ have equal probability to appear. Then for any $j$
+and any $M'$ the probability that \eqref{eq:mtc-cond}
+ holds is $p^{-\ell}$.
+\end{comment}
+\section{Challenge instances}
+
+\subsection{Partial collision}
+
+Instance parameters:
+\begin{itemize}
+    \item $p=2^{31}-2^{24}+1$.
+    \item $H$ is Poseidon1 in the compression mode with  16-element output, $R_F=8$ full rounds and $R_P=20$ partial rounds.
+\end{itemize}
+\begin{comment}
+Prizes:
+\begin{itemize}
+    \item $t=2$: \$1000 (expected complexity: $2^{31.5}$ hash calls)
+    \item $t=3$: \$3000  (expected complexity: $2^{47}$ hash calls)
+    \item $t=4$: \$9000 (expected complexity: $2^{62.5}$ hash calls)
+    \item $t=5$: \$27000  (expected complexity: $2^{78}$ hash calls)
+    \item $t=6$: \$81000 (expected complexity: $2^{93.5}$ hash calls)
+    \item $t=7$: \$243000  (expected complexity: $2^{109}$ hash calls)
+\end{itemize}
+\end{comment}
+\subsection{Density}
+
+Instance parameters:
+\begin{itemize}
+    \item $k=1$, $d=2$, $\ell=16$, $r=16$
+    \item $\mathrm{Decode}$ function $D$ operates as follows:
+    $$
+    D(x)=\log_{\omega} x^{\frac{p-1}{r}}
+    $$
+    where $\omega$ is a $r$-th root of unity in $\mathbb{F}_p$.
+    \item $H$ is Poseidon1 in the compression mode with  16-element output, $R_F=6$ full rounds and $R_P>5$ partial rounds.
+\end{itemize}
+
+The $\mu$ probabilities are the following:
+$$
+\mu(0)=1/p,\quad \mu(i\neq 0) = \frac{p-1}{pr}
+$$
+The best attack then has success rate about
+$$
+s_r\approx \left(\frac{d}{r}\right)^{16}=2^{-48}
+$$
+
+\subsection{Zero-test}
+
+Instance parameters:
+\begin{itemize}
+    \item $p=2^{31}-2^{24}+1$, $r=2$, $d=7$, $\ell=8$, $s=1$.
+    \item $H$ is Poseidon1 in the compression mode with  8-extension-field-element output, $R_F=6$ full rounds and $R_P>5$ partial rounds.
+\end{itemize}
+The best attack then has success rate about
+$$
+s_r= \frac{d}{p^r}\approx 2^{-59.2}
+$$
+
+
+\subsection{CICO problem}
+Instance parameters:
+\begin{itemize}
+    \item $p=2^{31}-2^{24}+1$, $k=2$, $t=16$.
+    \item $P$ is Poseidon1 permutation in the compression mode,
+     $R_F=6$ full rounds and $R_P\in\{6,8,10\}$ partial rounds.
+     \item
+     $$
+     C_1=0xc09de4,\quad C_2=0xee6282,\quad C_3=C_4 = 0.
+     $$
+\end{itemize}
+The best attack then has success rate about
+$$
+s_r= \frac{1}{p^r}\approx 2^{-62}
+$$
+
+\begin{comment}
+\subsection{Multi-target collision}
+
+Instance parameters:
+\begin{itemize}
+    \item $p=2^{31}-2^{24}+1$, $k=2^{16}$ , $\ell=2$.
+    \item $H$ is Poseidon1 in the compression mode with  16-element output, $R_F=6$ full rounds and $R_P>1$ partial rounds.
+\end{itemize}
+The best attack then has success rate about
+$$
+s_r \approx 2^{-62}
+$$
+\end{comment}
+\bibliographystyle{alpha}
+
+\end{document}

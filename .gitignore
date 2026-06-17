@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Rust
+target/
+
+# LaTeX build auxiliaries
+*.aux
+*.log
+*.out
+
+# gstack tooling (local browse logs/audit, not project content)
+.gstack/
+
+# Local/private workspace state
+.claude/
+.private/
+.local/
+research/
+
+# Submission packet duplicates are intentionally not tracked; canonical files live in paper/.
+submission/paper/poseidon2026-kb.pdf
+submission/paper/poseidon2026-kb.tex
+
+# OS
+.DS_Store

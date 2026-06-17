@@ -1,0 +1,11 @@
+# Runtime dependencies for this submission: NONE.
+#
+# The reference attack package (poseidon_attack/) and the submission verifier
+# bridge (submission/verify_with_official.py) are pure Python standard library.
+# They run on a stock CPython 3.11 with nothing installed.
+#
+# Test-only dependency:
+# tests/test_poly.py validates poseidon_attack.poly against SymPy as an
+# independent algebra oracle (the vendored reference is never executed). Install
+# it only if you want to run the full test suite:
+sympy

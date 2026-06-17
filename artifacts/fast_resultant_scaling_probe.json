@@ -1,0 +1,133 @@
+{
+  "artifact": "fast_resultant_scaling_probe",
+  "kind": "PROJECTION grounded in measured per-node fast-resultant times",
+  "date": "2026-06-05",
+  "machine": "single-thread wall-clock on the dev host (Darwin 25.5.0)",
+  "field": "KoalaBear p = 2^31 - 2^24 + 1 = 2130706433 (31-bit, stored as u32 = 4 bytes/elem)",
+  "method_summary": "zt_resultant_fast::resultant_fast is a half-GCD driven univariate resultant, validated EXACTLY == pl::resultant (schoolbook oracle) by gates G0..G5 and re-confirmed here on REAL Poseidon zero-test residuals at deg_y up to 3^13. The per-node cost at the RF=6 bounty scale was MEASURED (not extrapolated) on real residual pairs (f0,f1) built via the validated G4 spike route (full_cofactor seed=0, residual_polys_at_x_spike, x=1) through the current-record RP=8 compute-only delta; RP=9 uses the fitted fast-resultant exponent. The zero-test bounty cost is then projected as compute_only = D_I * measured_or_fit_fast_per_node, with D_I = 3^(2*(RF-1)+RP) interpolation nodes and per-node resultant degree delta = 3^(RF-1+RP).",
+  "measurement_mode": "core_rs/src/bin/zt_resultant_fast.rs subcommand: `time-real <rf> <rp> [--schoolbook]` builds ONE real residual at (rf,rp), times resultant_fast, optionally times+matches schoolbook pl::resultant. Emits JSON {rf,rp,deg_y,fast_s,schoolbook_s,match,build_s}.",
+  "degree_note": "Empirically deg_y(residual) = 3^(rf+rp) for EVEN rf (rf=2/rp=4 -> 3^6=729; rf=4/rp=5 -> 3^9=19683; rf=6/rp=5 -> 3^11=177147; rf=6/rp=6 -> 3^12=531441; rf=6/rp=7 -> 3^13=1594323). Odd rf truncates one full-round layer (rf=5/rp=6 -> 3^10=59049, not 3^11) because half=r_f/2 integer-divides. The per-node projection delta(RF,RP)=3^(RF-1+RP) therefore equals deg_y of a real even-rf residual: delta(6,6)=3^11=deg_y(6,5); delta(6,7)=3^12=deg_y(6,6); delta(6,4)=3^9=deg_y(4,5). So every per-node time below is a REAL residual measured at exactly the projection degree.",
+
+  "measured_points": [
+    {"source": "bench (random poly, task-provided)", "deg": 1024,    "fast_s": 0.005846, "schoolbook_s": null,      "match": null},
+    {"source": "bench (random poly, task-provided)", "deg": 4096,    "fast_s": 0.036582, "schoolbook_s": null,      "match": null},
+    {"source": "bench (random poly, task-provided)", "deg": 16384,   "fast_s": 0.200418, "schoolbook_s": null,      "match": null},
+    {"source": "bench (random poly, task-provided)", "deg": 65536,   "fast_s": 1.080536, "schoolbook_s": null,      "match": null},
+    {"source": "bench (random poly, task-provided)", "deg": 262144,  "fast_s": 5.576887, "schoolbook_s": null,      "match": null},
+    {"source": "real residual time-real 4 5 (3^9)",  "deg": 19683,   "fast_s": 0.236072, "schoolbook_s": 0.139439,  "match": true},
+    {"source": "real residual time-real 5 6 (3^10)", "deg": 59049,   "fast_s": 1.000368, "schoolbook_s": 1.235075,  "match": true},
+    {"source": "real residual time-real 6 5 (3^11)", "deg": 177147,  "fast_s": 3.369964, "schoolbook_s": 11.629202, "match": true},
+    {"source": "real residual time-real 6 6 (3^12)", "deg": 531441,  "fast_s": 15.537715,"schoolbook_s": 107.663324,"match": true},
+    {"source": "real residual time-real 6 7 (3^13)", "deg": 1594323, "fast_s": 40.117750,"schoolbook_s": null,      "match": null}
+  ],
+
+  "schoolbook_confirmation": {
+    "deg_19683":  {"fast": 730369345,  "schoolbook": 730369345,  "match": true},
+    "deg_59049":  {"fast": 1947286297, "schoolbook": 1947286297, "match": true},
+    "deg_177147": {"fast": 1762710948, "schoolbook": 1762710948, "match": true},
+    "deg_531441": {"fast": 725226042,  "schoolbook": 725226042,  "match": true, "note": "RF=6/RP=6 scale: fast == schoolbook EXACTLY, schoolbook ran in 107.7s"},
+    "deg_1594323":{"note": "schoolbook skipped (O(n^2) too slow); fast value=421540444"}
+  },
+
+  "fast_exponent": {
+    "value": 1.2154,
+    "model": "log-log least squares t = c * deg^k over the task fit set (bench 1024..262144 + real 19683/531441/1594323)",
+    "c_seconds": 1.434669e-06,
+    "r_squared": 0.99853,
+    "all_points_fit_incl_177147_59049": 1.2151,
+    "local_exponent_531441_to_1594323_real": 0.8634,
+    "local_exponent_177147_to_531441_real": 1.3912,
+    "interpretation": "Sub-quadratic and consistent with quasi-linear half-GCD theory. The global power fit lands at ~1.22 (the bench-only fit was ~1.18); the top real decade behaves even better (local k~0.86 from 531441 to 1594323)."
+  },
+
+  "fast_531441_vs_extrapolation": {
+    "measured_s": 15.537715,
+    "prior_extrapolation_s": 12.0,
+    "deviation": "MEASURED 15.5s is ~30% ABOVE the prior ~12s n*log n extrapolation. Real residuals are slightly heavier per-node than the optimistic nlogn projection; the power-fit (k=1.2154) predicts ~14.0s, closer. The projections below use the MEASURED 15.5s, not the 12s extrapolation, so they are conservative w.r.t. that gap."
+  },
+
+  "paper_repro_core_hours_vs_312": {
+    "reference": "ePrint 2026/150 Table 2: Poseidon2-31k RF=6/RP=4 = 2.6h on 120 threads = 312 core-hours (~2^46.3 ops)",
+    "our_analogue": {"D_nodes": 4782969, "D_expr": "3^14", "delta": 19683, "delta_expr": "3^9", "fast_per_node_s": 0.236072, "fast_per_node_source": "MEASURED, time-real 4 5"},
+    "projected_core_hours": 313.6,
+    "ratio_to_312": 1.005,
+    "within_2x": true,
+    "verdict": "METHODOLOGY CONFIRMED: our measured-fast-per-node projection reproduces the paper's 312 core-hours to within 0.5% (313.6 vs 312). This anchors the RF=6 projections below."
+  },
+
+  "projections": {
+    "note": "compute_only = D_I * measured_fast_per_node. Each fast_per_node is a REAL residual measured at exactly the projection delta degree.",
+    "rf6_rp6": {
+      "D_nodes": 43046721, "D_expr": "3^16",
+      "delta": 177147, "delta_expr": "3^11",
+      "fast_per_node_s": 3.369964, "fast_per_node_source": "MEASURED, time-real 6 5 (deg_y=177147)",
+      "total_compute_s": 145056450.6,
+      "core_hours": 40296.1,
+      "core_years": 4.5969,
+      "memory_gb": 58.45
+    },
+    "rf6_rp7": {
+      "D_nodes": 129140163, "D_expr": "3^17",
+      "delta": 531441, "delta_expr": "3^12",
+      "fast_per_node_s": 15.537715, "fast_per_node_source": "MEASURED, time-real 6 6 (deg_y=531441)",
+      "total_compute_s": 2006543273.0,
+      "core_hours": 557373.1,
+      "core_years": 63.5835,
+      "memory_gb": 526.07
+    },
+    "rf6_rp8": {
+      "role": "current_public_zero_test_record_on_2026_06_17",
+      "D_nodes": 387420489, "D_expr": "3^18",
+      "delta": 1594323, "delta_expr": "3^13",
+      "fast_per_node_s": 40.117750, "fast_per_node_source": "MEASURED, time-real 6 7 (deg_y=1594323)",
+      "total_compute_s": 15542438322.6,
+      "core_hours": 4317344.0,
+      "core_years": 492.8475,
+      "memory_gb": 4734.59
+    },
+    "rf6_rp9": {
+      "role": "first_public_record_improving_zero_test_target_on_2026_06_17",
+      "D_nodes": 1162261467, "D_expr": "3^19",
+      "delta": 4782969, "delta_expr": "3^14",
+      "fast_per_node_s": 188.476035, "fast_per_node_source": "FIT from fast_exponent.value=1.2154; no real degree-3^14 residual timed",
+      "total_compute_s": 219058432529.0,
+      "core_hours": 60849564.6,
+      "core_years": 6946.2973,
+      "memory_gb": 42611.35
+    }
+  },
+
+  "memory_model": {
+    "formula": "build-once bivariate coefficient-poly representation ~ delta^2/2 field elements * 4 bytes/elem",
+    "delta_177147_gb": 58.45,
+    "delta_531441_gb": 526.07,
+    "delta_1594323_gb": 4734.59,
+    "delta_4782969_gb": 42611.35,
+    "note": "This is the STREAMING/RAM gate. The build-once bivariate reaches ~4.7 TiB at the current-record RF=6/RP=8 compute-only delta and ~42.6 TiB at the first public-record-improving RF=6/RP=9 delta, before any out-of-core overhead. These memory/I/O costs are NOT captured by compute_only."
+  },
+
+  "verdict": "OUT_OF_REACH",
+  "verdict_rationale": "The live Initiative page checked 2026-06-17 reports RF=6/RP=8 as the current zero-test record, making RP=9 the first public-record-improving target. Even the compute-only fast-resultant projection is already ~493 core-years at RP=8 and ~6.9e3 core-years at RP=9, and it still excludes build/interpolation overhead plus assumes perfect 100%-efficient parallelism. More decisively, the build-once bivariate is a multi-TiB to tens-of-TiB streaming gate per the memory model. Net: out of reach as a naive compute bid; the only plausible fresh surface is a structural build collapse, e.g. a vulnerable admissible custom MDS.",
+
+  "caveats": [
+    "MEMORY/STREAMING GATE: the build-once bivariate is ~delta^2/2 * 4 bytes = 4.7 TiB at RF=6/RP=8 and 42.6 TiB at RF=6/RP=9. These targets cannot hold the bivariate in a single commodity node and require an out-of-core/streaming design whose I/O cost is NOT in the compute-only number.",
+    "COMPETITION/RECORD STATUS: RF=6/RP=8 is the current public zero-test record as of the 2026-06-17 Initiative page check; RP=9 is the first public-record-improving target.",
+    "SINGLE-RESIDUAL TIMING: each fast_per_node is ONE real residual (x=1, seed=0) timed once on a single thread. Per-node cost varies node-to-node (remainder-sequence shape, zero-remainder shortcuts); the true mean could differ by some constant factor. The deg-531441 schoolbook match (fast==pl::resultant) confirms correctness but not per-node-time variance.",
+    "BUILD + INTERPOLATION OVERHEAD NOT INCLUDED: compute_only counts only the per-node resultant. Building each residual (measured 0.9s@177147, 3.6s@531441, 11.7s@1594323) and the final multipoint interpolation over D_I nodes are excluded. Residual-build alone is already comparable to or larger than the resultant at below-record RP=7; for record-improving RP=9 the build/streaming wall dominates the decision.",
+    "PARALLEL-EFFICIENCY ASSUMPTION: core-hours assume embarrassingly-parallel nodes at 100% efficiency; real cluster overhead, scheduling, and the streaming bivariate's shared-state contention reduce effective throughput.",
+    "EXTRAPOLATION GAP: measured fast@531441 (15.5s) is ~30% above the prior ~12s nlogn extrapolation; if per-node cost keeps drifting above the optimistic model at larger delta, RF=6/RP=7 gets worse, not better. The projections use the measured (heavier) times, so they are conservative against this specific gap but not against further super-model drift.",
+    "PROJECTION, NOT A RUN: this artifact is a PROJECTION grounded in measured per-node fast-resultant times at the exact bounty degrees. It is NOT an executed end-to-end zero-test at RF=6."
+  ],
+
+  "files": {
+    "measurement_binary": "core_rs/src/bin/zt_resultant_fast.rs (time-real subcommand; validated resultant math + gates G0..G5 unchanged)",
+    "build": "cargo build --release --manifest-path <copy>/Cargo.toml --bin zt_resultant_fast",
+    "repro_commands": [
+      "zt_resultant_fast time-real 4 5 --schoolbook   # deg_y=19683 anchor (paper delta)",
+      "zt_resultant_fast time-real 6 5 --schoolbook   # deg_y=177147 (RF6/RP6 delta)",
+      "zt_resultant_fast time-real 6 6 --schoolbook   # deg_y=531441 (RF6/RP7 delta); confirms fast==schoolbook",
+      "zt_resultant_fast time-real 6 7                # deg_y=1594323 (RF6/RP8 current-record delta; schoolbook skipped)",
+      "RF6/RP9 uses the fitted fast exponent for deg_y=3^14; no real degree-3^14 residual timed"
+    ]
+  }
+}

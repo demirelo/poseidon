@@ -1,0 +1,39 @@
+{
+  "description": "Brute-force CICO calibration baseline on the REAL open instance. A relaxed CICO solution: both constrained output words have their low m bits zero. Calibration only -- exact solve needs the algebraic attack.",
+  "instance": {
+    "challenge": "CICO-2",
+    "rf": 6,
+    "rp": 10,
+    "t": 16,
+    "alpha": 3,
+    "p": 2130706433,
+    "mds": "Cauchy/Toeplitz (i-t-j)^-1",
+    "round_constants": "Grain LFSR",
+    "C1": "0xC09DE4",
+    "C2": "0xEE6282",
+    "predicate": "permutation_plus_linear([C1,C2]+free)[:2] == [0,0]"
+  },
+  "result": {
+    "relaxed_m_bits": 12,
+    "meaning": "low 12 bits of BOTH constrained output words are zero",
+    "residual": [1766379520, 1815851008],
+    "free_inputs_x3_x16": [3276914, 0, 1537633554, 2027808452, 387276917, 911006245, 1401181143, 1924910471, 284378936, 774553834, 1298283162, 1788458060, 147926525, 671655853],
+    "reverified": true
+  },
+  "performance": {
+    "trials": 15000000,
+    "wall_clock_s": 29.27,
+    "cico_residual_per_s_single_thread": 512470,
+    "machine": "developer laptop, 1 thread, release LTO build"
+  },
+  "extrapolation": {
+    "exact_solve_trials": "2^62 (= p^2)",
+    "exact_solve_core_years_single_thread": 285000,
+    "conclusion": "Brute force infeasible. Algebraic resultant/GCD attack is mandatory; this baseline only calibrates the search rate and confirms the gap."
+  },
+  "provenance": {
+    "produced_by": "core_rs/src/bin/search.rs",
+    "core_validated": "core_rs golden 14/14 (bit-identical to khovratovich/poseidon-tools @ 60075da7)",
+    "date": "2026-06-02"
+  }
+}
